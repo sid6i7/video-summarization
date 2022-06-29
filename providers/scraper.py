@@ -29,7 +29,7 @@ class Scraper:
             Input Parameters:
                 - keywords: keywords to be used in the search
 
-            Returns: video ids and titles
+            Returns: a dictionary of video ids and titles
         """
         keywords = '+'.join(keywords)
         response = requests.get(f'{YT_SEARCH_URL}{keywords}{YT_SEARCH_FILTER}').text
