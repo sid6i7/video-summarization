@@ -77,6 +77,14 @@ class Scraper:
         return captions
 
     def get_video_captions(self, keywords):
+        """
+            Scrapes youtube by searching for keywords
+
+            Input parameters:
+                - keywords: keywords to search for or words you would put in youtube search bar
+            
+            Returns: a dictionary (Video Title: Video Captions)
+        """
         videoDetails = self.__get_video_ids_titles(keywords=keywords)
         captions = self.__get_transcripts(videoIds=videoDetails.keys())
         
