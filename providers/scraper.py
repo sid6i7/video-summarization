@@ -1,5 +1,7 @@
+from random import randint
 import re
 import json
+from time import sleep
 import requests
 import sys
 import os
@@ -13,10 +15,6 @@ from config import *
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api.formatters import TextFormatter
 
-srt = YouTubeTranscriptApi.get_transcript("7W3oxSkq_rQ")
-
-text = TextFormatter().format_transcript(srt)
-print(text.replace('\n', " "))
 
 class Scraper:
 
@@ -24,7 +22,7 @@ class Scraper:
         self.transcriber = YouTubeTranscriptApi()
         self.transcriptFormatter = TextFormatter()
 
-    def get_video_ids(self, keywords):
+    def __get_video_ids_titles(self, keywords):
         """
             Scrapes video ids by querying youtube search using a bunch of keywords
 
@@ -38,14 +36,16 @@ class Scraper:
         dyn = re.search('var ytInitialData =(.*?);</script>', response)[0][20:-10]
         js = json.loads(dyn)
         videos = js['contents']['twoColumnSearchResultsRenderer']['primaryContents']['sectionListRenderer']['contents'][0]['itemSectionRenderer']['contents']
-        videoIds = []
+        videoDetails = {}
         for video in videos:
-            if ['videoRenderer']['videoId'] in video:
-                videoIds.append(video['videoRenderer']['videoId'])
+            if 'videoRenderer' in video:
+                id = video['videoRenderer']['videoId']
+                title = video['videoRenderer']['title']['runs'][0]['text'].strip()
+                videoDetails[id] = title
 
-        return videoIds
+        return videoDetails
     
-    def get_transcripts(self, videoIds):
+    def __get_transcripts(self, videoIds):
         """
             Fetches transcripts of youtube videos using video ID
 
@@ -54,7 +54,32 @@ class Scraper:
             
             Returns: list of transcripts in text format
         """
-        rawTranscripts = self.transcriber.get_transcripts(video_ids=videoIds)
-        transcripts = [transcript.replace("\n", " ") for transcript in self.transcriptFormatter.format_transcripts(rawTranscripts)]
+        captions = []
+        delay = randint(1, 3)
+        for idx, videoId in enumerate(videoIds):
+            if idx % 5 == 0 and idx != 0:
+                sleep(delay)
+            try:
+                transcripts = self.transcriber.list_transcripts(video_id=videoId)      
+                try:
+                    engTranscripts = transcripts.find_transcript(['en'])
+                    caption = self.transcriptFormatter.format_transcript(engTranscripts[0].fetch())
+                    captions.append(caption)
+                except:
+                    for transcript in transcripts:
+                        caption = self.transcriptFormatter.format_transcript(transcript.translate('en').fetch())
+                        captions.append(caption)
+                        break
+            except:
+                continue
+            break
 
-        return transcripts
+        return captions
+
+    def get_video_captions(self, keywords):
+        videoDetails = self.__get_video_ids_titles(keywords=keywords)
+        captions = self.__get_transcripts(videoIds=videoDetails.keys())
+        
+        captions = dict(zip(list(videoDetails.values()), captions))
+        # or save captions somewhere??
+        return captions
