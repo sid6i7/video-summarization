@@ -3,7 +3,6 @@ import re
 import json
 import requests as rq
 import sys
-import os
 
 mod = '../'
 if mod not in sys.path: sys.path.append(mod)
