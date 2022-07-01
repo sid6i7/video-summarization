@@ -31,7 +31,7 @@ class Scraper:
 
             Returns: a dictionary of video ids and titles
         """
-        keywords = '+'.join(keywords)
+        keywords = '+'.join(sys.argv[1:])
         response = requests.get(f'{YT_SEARCH_URL}{keywords}{YT_SEARCH_FILTER}').text
         dyn = re.search('var ytInitialData =(.*?);</script>', response)[0][20:-10]
         js = json.loads(dyn)
